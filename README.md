@@ -1,9 +1,20 @@
 # TON X-Ray
 
-We reveal what actually happens inside TON transactions — not just raw data, but flow, structure, and meaning.
+AI-powered Telegram bot for quick TON wallet analysis.
 
-## What it is
-TON X-Ray is a simple Telegram bot that accepts a TON wallet address or a transaction hash, fetches recent on-chain activity from TON API, builds a lightweight flow, and asks OpenAI to explain the behavior in human language.
+🎥 Demo video:  
+https://www.youtube.com/watch?v=D71Oj5jhkm4
+
+---
+
+## What it does
+TON X-Ray analyzes recent TON wallet activity and explains it in simple human language.
+
+- Fetches recent transactions via TON API
+- Extracts key metrics (counterparties, volume, flow)
+- Generates a short AI summary of behavior
+
+---
 
 ## Positioning
 This is **not**:
@@ -12,121 +23,80 @@ This is **not**:
 - a wallet
 
 This **is**:
-- an AI assistant for understanding TON transaction behavior
+- a simple tool to understand TON transaction activity
 
-## MVP features
-- Telegram bot on `aiogram`
-- Address or transaction hash input
-- Recent TON transaction fetch via `tonapi.io`
-- Simple flow parsing
-- AI explanation in 3–5 sentences
-- Clean Telegram output for demo
+---
 
-## Project structure
-```text
-bot/
-  handlers/
-core/
-services/
-  ai/
-  formatting/
-  parsing/
-  ton/
-utils/
-main.py
-```
+## Features
+- Telegram bot (`aiogram`)
+- Wallet address or transaction input
+- Real-time TON API integration
+- Basic flow parsing
+- AI explanation (3–5 sentences)
+- Clean demo-ready output
+
+---
 
 ## Quick start
-### 1. Install
+
+### Install
 ```bash
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 2. Configure
-Copy `.env.example` to `.env` and fill in:
-- `TELEGRAM_BOT_TOKEN`
-- `OPENAI_API_KEY`
-- optional `TONAPI_API_KEY`
+### Configure
+Create `.env`:
+```env
+TELEGRAM_BOT_TOKEN=...
+OPENAI_API_KEY=...
+TONAPI_API_KEY=...  # optional
+```
 
-### 3. Run
+### Run
 ```bash
 python main.py
 ```
 
-## User flow
-### `/start`
-Bot says:
-```text
-Send a TON wallet address or transaction hash to analyze its flow and behavior.
-```
+---
 
-### User sends
-```text
-EQC123...
-```
-or
-```text
-0xabc123...
-```
+## How it works
+1. User sends a TON address  
+2. Bot fetches recent transactions  
+3. Parser extracts simple metrics  
+4. AI generates a short explanation  
+5. Result is returned in Telegram  
 
-### Bot returns
+---
+
+## Example output
 ```text
 🔍 TON X-Ray
 
 Target: EQ...
-Flow:
-Wallet → Router → Pool → Jetton → NFT Marketplace
 
 Stats:
-• Transactions analyzed: 12
-• Unique contracts: 4
-• Hidden steps: 3
-• Jetton-related ops: 5
-• NFT-related ops: 1
-
-Observed patterns:
-• swap-like routing through contracts
-• token-related activity
-• nft-related activity
+• Transactions analyzed: 100
+• Unique counterparties: 42
+• Incoming ops: 99
+• Outgoing ops: 1
 
 AI Insight:
-This address appears to use TON DeFi infrastructure rather than making only direct transfers...
+Based on recent transactions, the wallet appears to mostly receive transfers from multiple sources...
 ```
 
-## Notes on implementation
-- `services/ton/ton_api.py` contains the required methods:
-  - `get_wallet_transactions(address)`
-  - `get_transaction(tx_hash)`
-- `services/parsing/parser.py` builds a simplified flow for MVP
-- `services/ai/analyzer.py` sends a compact factual prompt to OpenAI
-- `services/formatting/formatter.py` builds a judge-friendly message
+---
 
-## Why this fits the hackathon
-### Product quality
-Clean Telegram UX and easy live demo.
+## Why this project
+- Makes TON activity easier to understand
+- Works instantly inside Telegram
+- No blockchain expertise required
 
-### Technical execution
-Real TON API integration, transaction extraction, parser layer, and AI explanation.
+---
 
-### Ecosystem value
-Can be integrated into wallets, escrow systems, and DeFi tools to provide explainable transaction insights.
-
-### User potential
-Built for beginners and advanced users. Simplifies blockchain complexity.
-
-## Fast demo plan
-1. Run the bot
-2. Send one TON address
-3. Show the flow
-4. Show the AI explanation
-5. Done in under 10 seconds
-
-## Future upgrades
-- Better contract labeling
+## Future improvements
+- Better contract detection
 - Trace-based analysis
-- TON Center v3 fallback
 - Jetton/NFT enrichment
-- Caching and rate-limit handling
-- Inline buttons and history
+- Caching and performance improvements
