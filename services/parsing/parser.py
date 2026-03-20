@@ -20,19 +20,41 @@ def build_flow_result(transactions: list[NormalizedTransaction]) -> FlowResult:
         if not flow or flow[-1] != item:
             flow.append(item)
 
-    patterns: list[str] = []
-    lowered_flow = [item.lower() for item in flow]
+    if not flow:
+        flow = ["Unknown"]
 
-    if lowered_flow.count("router") >= 1 and lowered_flow.count("pool") >= 1:
-        patterns.append("swap-like routing through contracts")
-    if lowered_flow.count("jetton") >= 1:
+    patterns: list[str] = []
+
+    jetton_ops = sum(1 for tx in transactions if tx.asset_type == "Jetton")
+    nft_ops = sum(1 for tx in transactions if tx.asset_type == "NFT")
+
+    unique_counterparties = set()
+    for tx in transactions:
+        if tx.account_address and tx.from_address == tx.account_address and tx.to_address != "unknown":
+            unique_counterparties.add(tx.to_address)
+        elif tx.account_address and tx.to_address == tx.account_address and tx.from_address != "unknown":
+            unique_counterparties.add(tx.from_address)
+
+    if jetton_ops > 0:
         patterns.append("token-related activity")
-    if lowered_flow.count("nft marketplace") >= 1:
+
+    if nft_ops > 0:
         patterns.append("nft-related activity")
+
+    if len(unique_counterparties) >= 20:
+        patterns.append("broad interaction with many counterparties")
+    elif len(unique_counterparties) >= 5:
+        patterns.append("repeated transfers across several counterparties")
+
     if len(flow) >= 4:
         patterns.append("multi-step contract path")
 
     if not patterns:
-        patterns.append("mostly direct wallet and contract interaction")
+        if flow == ["Wallet"]:
+            patterns.append("mostly direct wallet activity")
+        elif flow == ["Contract"]:
+            patterns.append("repeated smart contract interaction")
+        else:
+            patterns.append("mixed wallet and contract interaction")
 
     return FlowResult(flow=flow, patterns=patterns)

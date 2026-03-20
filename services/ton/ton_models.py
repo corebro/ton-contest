@@ -6,6 +6,7 @@ from dataclasses import dataclass
 @dataclass(slots=True)
 class NormalizedTransaction:
     tx_hash: str
+    account_address: str
     from_address: str
     to_address: str
     amount: float
@@ -15,3 +16,5 @@ class NormalizedTransaction:
     success: bool
     contract_label: str | None = None
     comment: str | None = None
+    source_label: str | None = None
+    destination_label: str | None = None

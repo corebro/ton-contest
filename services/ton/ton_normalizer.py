@@ -22,19 +22,33 @@ def _extract_address(value: Any) -> str:
     return "unknown"
 
 
+def _extract_name(value: Any) -> str | None:
+    if isinstance(value, dict):
+        return (
+            value.get("name")
+            or value.get("label")
+            or value.get("title")
+            or value.get("icon")
+        )
+    return None
+
+
 def normalize_transaction(item: dict[str, Any]) -> NormalizedTransaction:
     in_msg = item.get("in_msg") or {}
+    out_msgs = item.get("out_msgs") or []
 
     tx_hash = item.get("hash") or item.get("tx_hash") or item.get("transaction_id") or "unknown"
-    from_address = _extract_address(in_msg.get("source") or item.get("from") or item.get("sender"))
-    to_address = _extract_address(in_msg.get("destination") or item.get("to") or item.get("recipient") or item.get("account"))
 
-    raw_value = (
-        in_msg.get("value")
-        or item.get("value")
-        or item.get("amount")
-        or 0
-    )
+    account_obj = item.get("account")
+    account_address = _extract_address(account_obj)
+
+    source_obj = in_msg.get("source") or item.get("from") or item.get("sender")
+    destination_obj = in_msg.get("destination") or item.get("to") or item.get("recipient") or account_obj
+
+    from_address = _extract_address(source_obj)
+    to_address = _extract_address(destination_obj)
+
+    raw_value = in_msg.get("value") or item.get("value") or item.get("amount") or 0
     try:
         amount = int(raw_value) / NANO
     except (TypeError, ValueError):
@@ -48,20 +62,48 @@ def normalize_transaction(item: dict[str, Any]) -> NormalizedTransaction:
         or "transfer"
     )
 
-    contract_label = None
-    destination = in_msg.get("destination")
-    if isinstance(destination, dict):
-        contract_label = destination.get("name") or destination.get("icon")
+    source_label = _extract_name(source_obj)
+    destination_label = _extract_name(destination_obj)
 
-    if item.get("nft") or "nft" in str(tx_type).lower():
+    contract_label = (
+        destination_label
+        or description.get("action")
+        or description.get("type")
+    )
+
+    comment = in_msg.get("message")
+    if not comment and out_msgs:
+        first_out = out_msgs[0] if isinstance(out_msgs[0], dict) else {}
+        comment = first_out.get("message")
+
+    asset_type = "TON"
+    text_blob = " ".join(
+        str(x) for x in [
+            tx_type,
+            contract_label,
+            source_label,
+            destination_label,
+            comment,
+            item.get("type"),
+            item.get("action"),
+        ] if x
+    ).lower()
+
+    if item.get("nft") or "nft" in text_blob or "getgems" in text_blob:
         asset_type = "NFT"
-    elif item.get("jetton") or "jetton" in str(tx_type).lower() or "token" in str(tx_type).lower():
+    elif (
+        item.get("jetton")
+        or "jetton" in text_blob
+        or "token" in text_blob
+        or "swap" in text_blob
+        or "ston" in text_blob
+        or "dedust" in text_blob
+    ):
         asset_type = "Jetton"
-    else:
-        asset_type = "TON"
 
     return NormalizedTransaction(
         tx_hash=tx_hash,
+        account_address=account_address,
         from_address=from_address,
         to_address=to_address,
         amount=amount,
@@ -70,5 +112,7 @@ def normalize_transaction(item: dict[str, Any]) -> NormalizedTransaction:
         timestamp=int(item.get("utime") or item.get("timestamp") or 0),
         success=not bool(item.get("aborted", False)),
         contract_label=contract_label,
-        comment=in_msg.get("message"),
+        comment=comment,
+        source_label=source_label,
+        destination_label=destination_label,
     )
