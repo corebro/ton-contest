@@ -9,6 +9,8 @@ class NormalizedTransaction:
     account_address: str
     from_address: str
     to_address: str
+    counterparty_address: str
+    direction: str  # incoming | outgoing | unknown
     amount: float
     asset_type: str
     tx_type: str

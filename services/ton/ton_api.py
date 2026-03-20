@@ -38,7 +38,7 @@ class TonApiClient:
         response.raise_for_status()
         data = response.json()
         txs = data.get("transactions", [])
-        return [normalize_transaction(tx) for tx in txs]
+        return [normalize_transaction(tx, address) for tx in txs]
 
     async def get_transaction(self, tx_hash: str) -> list[NormalizedTransaction]:
         response = await self._client.get(f"/blockchain/transactions/{tx_hash}")
@@ -47,7 +47,7 @@ class TonApiClient:
 
         account = self._extract_account_from_tx(tx)
         if not account:
-            return [normalize_transaction(tx)]
+            return [normalize_transaction(tx, "unknown")]
 
         account_response = await self._client.get(
             f"/blockchain/accounts/{account}/transactions",
@@ -57,8 +57,8 @@ class TonApiClient:
         account_data = account_response.json()
         related = account_data.get("transactions", [])
 
-        normalized = [normalize_transaction(tx)]
-        normalized.extend(normalize_transaction(item) for item in related[:5])
+        normalized = [normalize_transaction(tx, account)]
+        normalized.extend(normalize_transaction(item, account) for item in related[:5])
         return normalized
 
     @staticmethod

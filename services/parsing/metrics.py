@@ -36,37 +36,19 @@ def build_stats(transactions: list[NormalizedTransaction], flow: list[str]) -> d
             "top_counterparty": "n/a",
         }
 
-    target = transactions[0].account_address
+    counterparties = [
+        tx.counterparty_address
+        for tx in transactions
+        if tx.counterparty_address != "unknown"
+    ]
 
-    counterparties: list[str] = []
-    incoming = 0
-    outgoing = 0
-    amounts: list[float] = []
+    incoming = sum(1 for tx in transactions if tx.direction == "incoming")
+    outgoing = sum(1 for tx in transactions if tx.direction == "outgoing")
 
-    for tx in transactions:
-        if tx.amount > 0:
-            amounts.append(tx.amount)
-
-        if tx.to_address == target:
-            incoming += 1
-            if tx.from_address != "unknown":
-                counterparties.append(tx.from_address)
-
-        elif tx.from_address == target:
-            outgoing += 1
-            if tx.to_address != "unknown":
-                counterparties.append(tx.to_address)
-
-        else:
-            # fallback for malformed / partial tx data
-            if tx.from_address != "unknown":
-                counterparties.append(tx.from_address)
-            if tx.to_address != "unknown":
-                counterparties.append(tx.to_address)
+    amounts = [tx.amount for tx in transactions if tx.amount > 0]
 
     unique_addresses = set(counterparties)
 
-    # считаем "контрактами" только те контрагенты, которые не похожи на обычные адреса кошельков
     contract_counterparties = {
         addr for addr in unique_addresses if not _looks_like_wallet_address(addr)
     }

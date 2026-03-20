@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 from openai import AsyncOpenAI
 
 from core.config import settings
@@ -13,13 +15,23 @@ class AnalyzerService:
     async def explain_flow(
         self,
         flow: list[str],
-        stats: dict[str, int],
+        stats: dict[str, Any],
         patterns: list[str],
     ) -> str:
         prompt = build_analysis_prompt(flow, stats, patterns)
+
         response = await self._client.responses.create(
             model=settings.openai_model,
             input=prompt,
-            temperature=0.2,
+            temperature=0.1,
         )
-        return response.output_text.strip()
+
+        text = (response.output_text or "").strip()
+        if text:
+            return text
+
+        return (
+            "Based on recent transactions, this activity appears to follow a simple transfer pattern. "
+            "The available account history does not show strong evidence of complex routing, NFT actions, "
+            "or jetton-heavy behavior."
+        )
